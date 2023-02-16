@@ -1,9 +1,11 @@
 
 
-import {Plugin,ViteDevServer,normalizePath,transformWithEsbuild} from 'vite';
+import {Plugin,ViteDevServer,normalizePath,transformWithEsbuild,loadConfigFromFile} from 'vite';
 import * as Contants from './constants'
 import {componentReplacer} from './util';
 import {RouteProps,PluginProps} from './type'
+
+import {createRequire} from 'node:module'
 
 import path from 'path'
 
@@ -15,12 +17,17 @@ const resolvedFibVirtualModuleId = '\0' + virtualFibModuleId;
 
 
 
+export const dynamicImport = new Function('file', 'return import(file)')
+  
+
+
+
 export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
 
   // 路由配置文件路径
   let routerPath = process.cwd() + '/'+pathName;
 
-  // console.log('routerPath=',routerPath)
+  console.log('routerPath=',routerPath)
 
   // let preMd5 = '';
 
@@ -72,9 +79,9 @@ export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
       return id
     },
 
-    async configResolved() {
 
-      console.log('path.resolve=',path.resolve('src','pages','../../layouts'))
+    async configResolved(config) {
+
       /**读取文件 */
       const str = fs.readFileSync(normalizePath(routerPath), "utf-8")
       /**把文件代码转为iife格式 */
