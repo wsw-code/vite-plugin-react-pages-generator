@@ -1,13 +1,17 @@
-import { useState } from 'react'
-
 import './App.css'
+import { useRoutes } from 'react-router-dom';
+import customRoutes from 'react-router-page';
 
 function App() {
-  const [count, setCount] = useState(0)
+
+  // console.log(customRoutes)
+
+  let element = useRoutes(customRoutes);
 
   return (
     <div className="App">
-      I am a demo
+      {/* 111 */}
+      {element}
     </div>
   )
 }
