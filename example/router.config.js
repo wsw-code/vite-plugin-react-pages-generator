@@ -10,7 +10,7 @@ const routes = [
         children:[
           {
             path:'/one1/one11',
-            name:'one11-0009090',
+            name:'one11-new222',
             children:[
               {
                 path:'/one1/one11/PageA',

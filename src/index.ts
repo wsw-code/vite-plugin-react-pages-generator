@@ -1,9 +1,12 @@
 
 
-import {Plugin,ViteDevServer,normalizePath,transformWithEsbuild,ModuleNode} from 'vite';
+import {Plugin,ViteDevServer,normalizePath,transformWithEsbuild} from 'vite';
+
+
 import * as Contants from './constants'
 import {componentReplacer} from './util';
 import {RouteProps,PluginProps} from './type';
+import loadConfigFile from './util/loadConfigFile'
 
 import PageContext from './context';
 
@@ -98,51 +101,52 @@ export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
 
 
     async configResolved() {
+      // console.log('path = ',normalizePath(path.resolve('test.js')))
+      // console.log('url',)
+      // const {href} = pathToFileURL(normalizePath(path.resolve('test.js')))
+      // const a = await import(href);
 
-
+      // console.log('a',a.default)
       
     },
 
     configureServer(server:ViteDevServer) {
+      
       myServer = server;
       myServer.watcher.on('change',(path)=>{
         if(normalizePath(routerPath) === normalizePath(path)) {
-          
+          /**重新刷新浏览器 */
           myServer.ws.send({
             type: 'full-reload',
-          })
+          });
 
-  
-          const mods = server.moduleGraph.getModulesByFile('\x00react-router-page');
 
-          if (mods) {
-            const seen = new Set<ModuleNode>()
-            mods.forEach((mod) => {
-              console.log(1)
-              server.moduleGraph.invalidateModule(mod, seen)
-            })
-          }
+          /**清楚缓存 */
+          server.moduleGraph.onFileChange('\x00react-router-page')
         }
       })
     },
 
     async load(id) {
       
-      console.log('id',id)
+      
       // 加载虚拟模块
       if (id === resolvedFibVirtualModuleId) {
 
-        /**读取文件 */
-        const str = fs.readFileSync(normalizePath(routerPath), "utf-8")
-        /**把文件代码转为iife格式 */
-        const _iife_code = await transformWithEsbuild(str,'test',{loader:'ts',format:'iife',globalName:Contants.GLOBAL_NAME})
-        /**执行转化后代码，获取 路由配置中的数据 */
-        const result = new Function(`${_iife_code.code} return ${Contants.GLOBAL_NAME}`)()
+        // /**读取文件 */
+        // const str = fs.readFileSync(normalizePath(routerPath), "utf-8")
+        // /**把文件代码转为iife格式 */
+        // const _iife_code = await transformWithEsbuild(str,'test',{loader:'ts',format:'iife',globalName:Contants.GLOBAL_NAME})
+        // /**执行转化后代码，获取 路由配置中的数据 */
+        // const result = new Function(`${_iife_code.code} return ${Contants.GLOBAL_NAME}`)()
         
-        if(result.default) {
-          routesList = result.default
-        }
+        // if(result.default) {
+        //   routesList = result.default
+        // }
 
+        const _path = normalizePath(routerPath);
+
+        routesList = await loadConfigFile(_path)
 
         /**创建返回路由 */
         const routeString = JSON.stringify(getRouteString(routesList));
@@ -153,7 +157,6 @@ export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
         const ${Contants.routeData} = ${JSON.stringify(routesList)}
         export default ${transformStr};\n
         `
-        // fs.writeFileSync('test.ts',_code);
         return {
           code:_code
         }
