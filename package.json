@@ -1,6 +1,5 @@
 {
   "name": "vite-plugin-react-pages-generator",
-  "private": true,
   "version": "0.0.1",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
