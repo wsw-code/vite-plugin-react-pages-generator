@@ -1,13 +1,27 @@
 {
   "name": "vite-plugin-react-pages-generator",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.0.1",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json",
+    "./dist/*": "./dist/*"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsup",
     "preview": "vite preview",
-    "dev:example": "cd example && vite"
+    "dev:example": "cd example && vite",
+    "release": "bumpp"
   },
   "devDependencies": {
     "@ant-design/pro-layout": "^7.7.1",
@@ -16,9 +30,11 @@
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^3.1.0",
     "antd": "^5.2.1",
+    "bumpp": "^9.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
+    "tsup": "^6.6.3",
     "typescript": "^4.9.3",
     "vite": "^4.0.0"
   }

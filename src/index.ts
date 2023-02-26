@@ -1,18 +1,15 @@
 
 
-import {Plugin,ViteDevServer,normalizePath,transformWithEsbuild} from 'vite';
+import {Plugin,ViteDevServer,normalizePath} from 'vite';
 
 
 import * as Contants from './constants'
 import {componentReplacer} from './util';
 import {RouteProps,PluginProps} from './type';
 import loadConfigFile from './util/loadConfigFile'
-
-import PageContext from './context';
-
-
+// import PageContext from './context';
 import path from 'path'
-import fs from 'fs'
+
 // 虚拟模块名称
 const virtualFibModuleId = 'react-router-page';
 // Vite 中约定对于虚拟模块，解析后的路径需要加上`\0`前缀
@@ -37,7 +34,7 @@ export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
 
 
 
-  const context = new PageContext();
+  // const context = new PageContext();
 
 
   // 路由配置文件路径
