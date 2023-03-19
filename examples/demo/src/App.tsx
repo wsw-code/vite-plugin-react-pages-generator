@@ -4,13 +4,10 @@ import customRoutes from 'react-router-page';
 
 function App() {
 
-  // console.log(customRoutes)
-
   let element = useRoutes(customRoutes);
 
   return (
     <div className="App">
-      {/* 111 */}
       {element}
     </div>
   )

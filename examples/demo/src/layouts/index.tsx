@@ -76,21 +76,23 @@ export default ({ routes }: any) => {
             <div>Logo</div>
           );
         }}
-        menuItemRender={(item, dom) => (
-          <div
+        menuItemRender={(item, dom) => {
+       
+          return (
+            <div
             onClick={() => {
               console.log(item)
               if (item.path) {
+                console.log(item.path)
                 navigate(item.path)
               }
             }}
           >
             {dom}
           </div>
-        )}
-        // location={{
-        //   pathname
-        // }}
+          )
+        }}
+
         title={''}
         route={routes}
       >

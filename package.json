@@ -1,23 +1,22 @@
 {
   "name": "vite-plugin-react-pages-generator",
   "version": "0.0.1",
-  "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "main": "dist/index.js",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./package.json": "./package.json",
-    "./dist/*": "./dist/*"
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsup",
+    "dev": "pnpm run build --watch --ignore-watch examples",
+    "build": "tsup src/index.ts --dts --format cjs,esm",
     "preview": "vite preview",
     "dev:example": "cd example && vite",
     "release": "bumpp"

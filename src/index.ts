@@ -40,10 +40,7 @@ export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
   // 路由配置文件路径
   let routerPath = process.cwd() + '/'+pathName;
 
-  console.log('routerPath=',routerPath);
-  
 
-  // let preMd5 = '';
 
   let routesList:RouteProps[] = []
 
@@ -98,12 +95,7 @@ export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
 
 
     async configResolved() {
-      // console.log('path = ',normalizePath(path.resolve('test.js')))
-      // console.log('url',)
-      // const {href} = pathToFileURL(normalizePath(path.resolve('test.js')))
-      // const a = await import(href);
 
-      // console.log('a',a.default)
       
     },
 
@@ -129,31 +121,22 @@ export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
       
       // 加载虚拟模块
       if (id === resolvedFibVirtualModuleId) {
-
-        // /**读取文件 */
-        // const str = fs.readFileSync(normalizePath(routerPath), "utf-8")
-        // /**把文件代码转为iife格式 */
-        // const _iife_code = await transformWithEsbuild(str,'test',{loader:'ts',format:'iife',globalName:Contants.GLOBAL_NAME})
-        // /**执行转化后代码，获取 路由配置中的数据 */
-        // const result = new Function(`${_iife_code.code} return ${Contants.GLOBAL_NAME}`)()
-        
-        // if(result.default) {
-        //   routesList = result.default
-        // }
-
         const _path = normalizePath(routerPath);
-
-        routesList = await loadConfigFile(_path)
-
+        routesList = await loadConfigFile(_path);
         /**创建返回路由 */
         const routeString = JSON.stringify(getRouteString(routesList));
+
         const transformStr = routeString.replace(Contants.componentRE, componentReplacer);
+
         const _code = `
         import React from "react";\n
         ${Object.values(imports).join('\n')} \n
         const ${Contants.routeData} = ${JSON.stringify(routesList)}
         export default ${transformStr};\n
         `
+
+   
+
         return {
           code:_code
         }
