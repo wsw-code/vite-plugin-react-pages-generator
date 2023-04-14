@@ -18,7 +18,7 @@
     "dev": "pnpm run build --watch --ignore-watch examples",
     "build": "tsup src/index.ts --dts --format cjs,esm",
     "preview": "vite preview",
-    "dev:example": "cd example && vite",
+    "dev:example": "cd examples/demo && vite",
     "release": "bumpp"
   },
   "devDependencies": {
@@ -35,5 +35,8 @@
     "tsup": "^6.6.3",
     "typescript": "^4.9.3",
     "vite": "^4.0.0"
+  },
+  "dependencies": {
+    "fs-extra": "^11.1.1"
   }
 }

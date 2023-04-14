@@ -5,7 +5,7 @@ import {Plugin,ViteDevServer,normalizePath} from 'vite';
 
 import * as Contants from './constants'
 import {componentReplacer} from './util';
-import {RouteProps,PluginProps} from './type';
+import {RouteProps,PluginProps,ConfigProps} from './type';
 import loadConfigFile from './util/loadConfigFile'
 // import PageContext from './context';
 import path from 'path'
@@ -28,14 +28,14 @@ type Props = {
 }
 
 
+export const defineConfig = (config:ConfigProps) => {
+  return config
+}
+
 
 export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
 
-
-
-
   // const context = new PageContext();
-
 
   // 路由配置文件路径
   let routerPath = process.cwd() + '/'+pathName;
@@ -134,9 +134,6 @@ export default function virtualFibModulePlugin({pathName}:PluginProps): Plugin {
         const ${Contants.routeData} = ${JSON.stringify(routesList)}
         export default ${transformStr};\n
         `
-
-   
-
         return {
           code:_code
         }

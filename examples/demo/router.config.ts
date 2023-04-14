@@ -1,3 +1,5 @@
+import {defineConfig} from 'vite-plugin-react-pages-generator'
+
 const routes = [
   {
     path:'/',
@@ -63,4 +65,10 @@ const routes = [
   }
 ]
 
-export default routes;
+// export default routes;
+
+
+
+export default defineConfig({
+  routes:routes
+})
