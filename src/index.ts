@@ -2,7 +2,7 @@ import { Plugin, ViteDevServer, normalizePath } from "vite";
 
 import * as Contants from "./constants";
 import { componentReplacer } from "./util";
-import { RouteProps, PluginProps, ConfigProps } from "./type";
+import { PluginProps, ConfigProps } from "./type";
 import { resolveUserConfig } from "./util/loadConfigFile";
 // import PageContext from './context';
 import path from "path";
@@ -31,8 +31,6 @@ export default function virtualFibModulePlugin({
 
   // 路由配置文件路径
   let routerPath = process.cwd() + "/" + pathName;
-
-  let routesList: RouteProps[] = [];
 
   let myServer: ViteDevServer;
   let imports: Record<string, string> = {};
@@ -94,24 +92,34 @@ export default function virtualFibModulePlugin({
       command = command;
     },
 
-    configureServer(server: ViteDevServer) {
-      myServer = server;
-      myServer.watcher.on("change", (path) => {
-        if (normalizePath(routerPath) === normalizePath(path)) {
-          /**重新刷新浏览器 */
-          myServer.ws.send({
-            type: "full-reload",
-          });
+    async handleHotUpdate(ctx) {
+      console.log(normalizePath(routerPath));
+      if (normalizePath(routerPath) === ctx.file) {
+        /**重新刷新浏览器 */
+        ctx.server.ws.send({
+          type: "full-reload",
+        });
 
-          /**清楚缓存 */
-          server.moduleGraph.onFileChange("\x00react-router-page");
-        }
-      });
+        /**清楚缓存 */
+        ctx.server.moduleGraph.onFileChange("\x00react-router-page");
+      }
+      // const customWatchedFiles = [normalizePath(config.configPath)];
+      // const include = (id: string) =>
+      //   customWatchedFiles.some((file) => id.includes(file));
+      // if (include(ctx.file)) {
+      //   console.log(
+      //     `\n${relative(config.root, ctx.file)} changed, restarting server...`
+      //   );
+      //   // 重点: 重启 Dev Server
+      //   await restartServer();
+      // }
     },
 
-    async load(id, props) {
+    async load(id) {
       // 加载虚拟模块
+
       if (id === resolvedFibVirtualModuleId) {
+        console.log("加载模块", id);
         // const _path = normalizePath(routerPath);
         const { routes } = await resolveUserConfig(
           process.cwd(),
