@@ -1,85 +1,177 @@
 
 import {Plugin,ViteDevServer,normalizePath,transformWithEsbuild} from 'vite';
-import type { FSWatcher } from 'fs';
-import * as Contants from './constants'
+import type {ConfigEnv } from 'vite';
+
 import path from 'path';
-import {RouteProps,PluginProps} from './type';
+import {RouteProps} from './type';
+import resolveUserConfig,{getUserConfigPath } from "./util/loadConfigFile";
+import * as Contants from "./constants";
+import { componentReplacer } from "./util";
 
 
-type Props = {
-  children?: Props[]
-  element?: string;
-  path: string
+// 虚拟模块名称
+export const virtualFibModuleId = "react-router-page";
+// Vite 中约定对于虚拟模块，解析后的路径需要加上`\0`前缀
+export const resolvedFibVirtualModuleId = "\0" + virtualFibModuleId;
+
+export const moduleGraphName = `\x00${virtualFibModuleId}`
+
+export const ElementPreName = 'Pre_'
+
+
+export const traverswRouteTree = (route:RouteProps[],) => {
+
+  const res:RouteProps[] = []
+
+  const loopList:LoopType[] = [{
+    parent:res,
+    data:route
+  }]
+
+  while(loopList.length) {
+    const {data,parent} = loopList.shift() as LoopType;
+    for (let index = 0; index < data.length; index++) {
+      const element = data[index];
+      parent.push(element);
+       if(element.children instanceof Array) {
+        loopList.push({
+          parent:parent[index].children as RouteProps[],
+          data:element.children
+        })
+       } 
+    }  
+  }
+
+  return res
 }
+
+
+type LoopType = {
+  data:RouteProps[],
+  parent:RouteProps[]
+}
+
+export const createElementName = (elementName:string) => {
+  return `${ElementPreName}${elementName.replace(/[^A-Za-z0-9]/gi, "")}`
+}
+
+
+
+/**
+ * 生成 组件名：组件引入字符串 Map
+ * @param route 路由配置数据
+ * @returns 例子：{A: 'import A from A路径'}
+ */
+export const getPathMap = (route:RouteProps[]) => {
+  const res:Record<string,string> = {};
+  const loopList:(RouteProps[])[] = [route]
+  while(loopList.length) {
+    const node = loopList.shift() as RouteProps[];
+    for (let index = 0; index < node.length; index++) {
+      const {element = null,children=null} = node[index];
+      if(element) {
+        const elementPath = normalizePath(
+          path.resolve("src", "pages", element)
+        );
+        const elementName = createElementName(element);
+        res[elementName] = `import ${elementName} from '${elementPath}';`;
+      }
+      if(children) {
+        loopList.push(children);
+      }
+    }
+  }
+  return res
+}
+
+
+const injectChild = (element:string,children:string) => {
+
+}
+
+/**
+ * 生成符合react-router 数据
+ * @param route 
+ */
+export const generateCode = (route:RouteProps[]):RouteProps[] => {
+  
+  
+  return route.map(el=>{
+    const {element,children=[],...rest} = el;
+
+    return {
+      ...rest,
+      ...element?{element:createElementName(element)}:{},
+      ...children?{children:generateCode(children)}:{}
+    }
+
+  })
+}
+
+const ROUTER_PATH = ["router.config.ts","router.config.js"]
+
 
 export default class PageContext {
 
-  /**路由配置文件路径 */
-  routerPath:string = ''
-  /**server实例 */
-  private _server: ViteDevServer | undefined;
-
+  /**路由配置文件路径枚举 */
+  routerPath = ROUTER_PATH
   /**import 集合 */
   imports:Record<string,string> = {};
 
+  /**目标配置文件路径 */
+  targetPath?:string = '';
+
+  config?:ConfigEnv = undefined;
+
+  routes:RouteProps[] = []
+  
   constructor() {
 
   }
 
+  initConfig(config:ConfigEnv) {
+    this.config = config;
+    this.targetPath = getUserConfigPath();
 
-  setupViteServer(server: ViteDevServer) {
-    if (this._server === server)
-      return
-
-    this._server = server
-    this.setupWatcher(server.watcher)
   }
 
 
-  setupWatcher(watcher: FSWatcher) {
-    watcher
-    .on('change', async(path) => {
-      console.log(path)
-    })
+
+  async genarateClientCode() {
+    if(this.targetPath) {
+      
+      const { routes } = await resolveUserConfig(
+        process.cwd(),
+        this.config!.command,
+        this.config!.mode,
+        this.targetPath
+      );
+      
+      const pathMap = getPathMap(routes);
+      const routeString = JSON.stringify(generateCode(routes));
+
+      const transformStr = routeString.replace(
+        Contants.componentRE,
+        componentReplacer
+      );
+
+      return `
+      import React from "react";\n
+      ${Object.values(pathMap).join("\n")} \n
+      const ${Contants.routeData} = ${JSON.stringify(routes)}
+      export default ${transformStr};\n
+      `;
+
+
+    }
+
+
+
+    return 'export default const routes = []'
+
+
   }
 
-
-  getRouteString(arr: Props[], indexList: number[] = []) {
-    return arr.map((el, index) => {
-      const { element, children = null } = el;
-  
-      let elementStr = element
-      const curIndexList = [...indexList, index];
-      if (element) {
-
-        const elementPath = normalizePath(path.resolve('src','pages',element));
-        const elementName = element.replace(/[^A-Za-z0-9 ]/ig,'')
-        this.imports[elementName] = `import ${elementName} from '${elementPath}';`
-
-        if (!children) {
-          elementStr = elementName
-        } else {
-          elementStr = `${elementName},{routes:${Contants.routeData}[${curIndexList.join("]['children'][")}]}`
-        }
-
-      }
-  
-      const temp = {
-        ...el
-      };
-
-      if (element) {
-        temp.element = elementStr
-      };
-  
-      if (children) {
-        temp.children = this.getRouteString(children, curIndexList)
-      };
-  
-      return temp
-  
-    })
-  }
 
   
 

@@ -1,7 +1,6 @@
 import fs from "fs-extra";
-import { normalizePath, transformWithEsbuild } from "vite";
+import type {ConfigEnv} from 'vite';
 import * as Contants from "../constants";
-import { pathToFileURL } from "url";
 import { loadConfigFromFile } from "vite";
 import { resolve } from "path";
 
@@ -12,45 +11,9 @@ type RawConfig =
   | Promise<ConfigProps>
   | (() => ConfigProps | Promise<ConfigProps>);
 
-/** 加载配置文件 */
 
-export default async (routerPath: string) => {
-  /**是否是ts文件 */
-  const isTs = routerPath.endsWith("ts");
-  console.log("isTs", isTs);
-  if (isTs) {
-    const str = fs.readFileSync(normalizePath(routerPath), "utf-8");
-    /**把文件代码转为iife格式 */
-    const _iife_code = await transformWithEsbuild(str, "test", {
-      loader: "ts",
-      format: "iife",
-      globalName: Contants.GLOBAL_NAME,
-    });
-    console.log(_iife_code.code);
-    /**执行转化后代码，获取 路由配置中的数据 */
-    const result = new Function(
-      `${_iife_code.code} return ${Contants.GLOBAL_NAME}`
-    )();
-    console.log("1111111111111111");
-    console.log(result.default);
 
-    if (result.default) {
-      return result.default;
-    }
-  } else {
-    const { href } = pathToFileURL(routerPath);
-    const result = await import(href);
-    if (result.default) {
-      // console.log('result',result)
-      return result.default;
-    }
-  }
-
-  return null;
-};
-
-function getUserConfigPath(root: string) {
-  console.log("root", root);
+export function getUserConfigPath(root: string= process.cwd()) {
   try {
     const supportConfigFiles = ["router.config.ts", "router.config.js"];
     const configPath = supportConfigFiles
@@ -63,12 +26,13 @@ function getUserConfigPath(root: string) {
   }
 }
 
-export async function resolveUserConfig(
+export default async function(
   root: string,
-  command: "serve" | "build",
-  mode: "development" | "production"
+  command: ConfigEnv['command'],
+  mode: ConfigEnv['mode'],
+  configPath:string
 ) {
-  const configPath = getUserConfigPath(root);
+  
   // 2. 读取配置文件的内容
   const result = await loadConfigFromFile(
     {
@@ -95,16 +59,11 @@ export async function resolveUserConfig(
   }
 }
 
-export async function resolveConfig(
-  root: string,
-  command: "serve" | "build",
-  mode: "development" | "production"
-): Promise<any> {
-  const userConfig = await resolveUserConfig(root, command, mode);
-  // const siteConfig: SiteConfig = {
-  //   root,
-  //   configPath: configPath,
-  //   // siteData: resolveSiteData(userConfig as UserConfig)
-  // };
-  return userConfig;
-}
+// export default async function resolveConfig(
+//   root: string,
+//   command: "serve" | "build",
+//   mode: "development" | "production"
+// ): Promise<any> {
+//   const userConfig = await resolveUserConfig(root, command, mode);
+//   return userConfig;
+// }

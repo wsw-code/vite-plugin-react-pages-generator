@@ -16,3 +16,9 @@ export type PluginProps = {
 export type ConfigProps = {
   routes:RouteProps[]
 }
+
+
+export type ModeType = "string";
+
+
+export type CommandType = "development" | "production";

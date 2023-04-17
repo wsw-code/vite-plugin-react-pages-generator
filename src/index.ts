@@ -1,16 +1,12 @@
-import { Plugin, ViteDevServer, normalizePath } from "vite";
+import { Plugin, normalizePath } from "vite";
 
 import * as Contants from "./constants";
-import { componentReplacer } from "./util";
-import { PluginProps, ConfigProps } from "./type";
-import { resolveUserConfig } from "./util/loadConfigFile";
-// import PageContext from './context';
+import {  ConfigProps } from "./type";
+import PageContext,{resolvedFibVirtualModuleId,virtualFibModuleId,moduleGraphName} from './context';
 import path from "path";
 
-// 虚拟模块名称
-const virtualFibModuleId = "react-router-page";
-// Vite 中约定对于虚拟模块，解析后的路径需要加上`\0`前缀
-const resolvedFibVirtualModuleId = "\0" + virtualFibModuleId;
+
+
 
 export const defineConfig = (config: ConfigProps) => {
   return config;
@@ -24,19 +20,15 @@ type Props = {
   path: string;
 };
 
-export default function virtualFibModulePlugin({
-  pathName,
-}: PluginProps): Plugin {
-  // const context = new PageContext();
+export default function virtualFibModulePlugin(): Plugin {
+  const context = new PageContext();
 
   // 路由配置文件路径
-  let routerPath = process.cwd() + "/" + pathName;
+  let routerPath = process.cwd() + "/" + 'router.config.ts';
 
-  let myServer: ViteDevServer;
   let imports: Record<string, string> = {};
 
-  let mode: "build" | "serve" = "serve";
-  let command: "development" | "production" = "development";
+
 
   const getRouteString = (arr: Props[], indexList: number[] = []) => {
     return arr.map((el, index) => {
@@ -47,7 +39,7 @@ export default function virtualFibModulePlugin({
         const elementPath = normalizePath(
           path.resolve("src", "pages", element)
         );
-        const elementName = element.replace(/[^A-Za-z0-9 ]/gi, "");
+        const elementName = element.replace(/[^A-Za-z0-9]/gi, "");
         imports[elementName] = `import ${elementName} from '${elementPath}';`;
 
         if (!children) {
@@ -75,8 +67,16 @@ export default function virtualFibModulePlugin({
     });
   };
 
+   
+
   return {
     name: "vite-plugin-react-pages-generator",
+
+    config(config, configEnv) {
+      console.log(config)
+      context.initConfig(configEnv);
+    },
+
     resolveId(id) {
       if (id === virtualFibModuleId) {
         return resolvedFibVirtualModuleId;
@@ -84,16 +84,7 @@ export default function virtualFibModulePlugin({
       return id;
     },
 
-    async configResolved() {},
-
-    config(config, { mode, command }) {
-      console.log(config);
-      mode = mode;
-      command = command;
-    },
-
     async handleHotUpdate(ctx) {
-      console.log(normalizePath(routerPath));
       if (normalizePath(routerPath) === ctx.file) {
         /**重新刷新浏览器 */
         ctx.server.ws.send({
@@ -101,53 +92,47 @@ export default function virtualFibModulePlugin({
         });
 
         /**清楚缓存 */
-        ctx.server.moduleGraph.onFileChange("\x00react-router-page");
+        ctx.server.moduleGraph.onFileChange(moduleGraphName);
       }
-      // const customWatchedFiles = [normalizePath(config.configPath)];
-      // const include = (id: string) =>
-      //   customWatchedFiles.some((file) => id.includes(file));
-      // if (include(ctx.file)) {
-      //   console.log(
-      //     `\n${relative(config.root, ctx.file)} changed, restarting server...`
-      //   );
-      //   // 重点: 重启 Dev Server
-      //   await restartServer();
-      // }
     },
 
     async load(id) {
       // 加载虚拟模块
 
       if (id === resolvedFibVirtualModuleId) {
-        console.log("加载模块", id);
-        // const _path = normalizePath(routerPath);
-        const { routes } = await resolveUserConfig(
-          process.cwd(),
-          mode,
-          command
-        );
+        console.log("加载模块22", id);
 
-        console.log("props", JSON.stringify(routes));
+        // const [configPath,{ routes }] = await resolveUserConfig(
+        //   process.cwd(),
+        //   mode,
+        //   command
+        // );
 
-        // resolveUserConfig(process.cwd());
-        // routesList = await loadConfigFile(_path);
-        /**创建返回路由 */
-        const routeString = JSON.stringify(getRouteString(routes));
+        //   console.log(configPath)
 
-        const transformStr = routeString.replace(
-          Contants.componentRE,
-          componentReplacer
-        );
+        // const routeString = JSON.stringify(getRouteString(routes));
 
-        const _code = `
-        import React from "react";\n
-        ${Object.values(imports).join("\n")} \n
-        const ${Contants.routeData} = ${JSON.stringify(routes)}
-        export default ${transformStr};\n
-        `;
+        // const transformStr = routeString.replace(
+        //   Contants.componentRE,
+        //   componentReplacer
+        // );
+
+        // const _code = `
+        // import React from "react";\n
+        // ${Object.values(imports).join("\n")} \n
+        // const ${Contants.routeData} = ${JSON.stringify(routes)}
+        // export default ${transformStr};\n
+        // `;
+
+        // return {
+        //   code: _code,
+        // };
+
+        const _code = await context.genarateClientCode();
+
         return {
-          code: _code,
-        };
+          code:_code
+        }
       }
 
       return null;
