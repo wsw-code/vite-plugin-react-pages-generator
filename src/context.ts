@@ -57,6 +57,12 @@ export const createElementName = (elementName: string) => {
   return `${ElementPreName}${elementName.replace(/[^A-Za-z0-9]/gi, "")}`;
 };
 
+export const genarateElePath = (element:string) => {
+  return normalizePath(
+    path.resolve("src", "pages", element)
+  );
+}
+
 /**
  * 生成 组件名：组件引入字符串 Map
  * @param route 路由配置数据
@@ -70,9 +76,7 @@ export const getPathMap = (route: RouteProps[]) => {
     for (let index = 0; index < node.length; index++) {
       const { element = null, children = null } = node[index];
       if (element) {
-        const elementPath = normalizePath(
-          path.resolve("src", "pages", element)
-        );
+        const elementPath = genarateElePath(element)
         const elementName = createElementName(element);
         res[elementName] = `import ${elementName} from '${elementPath}';`;
       }
