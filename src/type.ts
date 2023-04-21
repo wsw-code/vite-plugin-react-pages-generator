@@ -4,7 +4,10 @@
 export type RouteProps = {
   element?:string;
   path:string;
-  children?:RouteProps[]
+  children?:RouteProps[];
+  name?:string;
+  /**是否懒加载 */
+  lazy?:boolean;
 }
 
 /**插件参数类型 */

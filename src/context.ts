@@ -11,6 +11,7 @@ import { RouteProps } from "./type";
 import resolveUserConfig, { getUserConfigPath } from "./util/loadConfigFile";
 import * as Contants from "./constants";
 import { componentReplacer } from "./util";
+import { lazy } from "react";
 
 // 虚拟模块名称
 export const virtualFibModuleId = "react-router-page";
@@ -74,8 +75,8 @@ export const getPathMap = (route: RouteProps[]) => {
   while (loopList.length) {
     const node = loopList.shift() as RouteProps[];
     for (let index = 0; index < node.length; index++) {
-      const { element = null, children = null } = node[index];
-      if (element) {
+      const { element = null, children = null,lazy} = node[index];
+      if (element && !lazy) {
         const elementPath = genarateElePath(element)
         const elementName = createElementName(element);
         res[elementName] = `import ${elementName} from '${elementPath}';`;
@@ -102,6 +103,26 @@ const injectChild = (
   )}]}`;
 };
 
+
+const genarateEle = (el:RouteProps,curIndexList:number[]) => {
+  const { element, children = [],lazy} = el;
+  if(element) {
+    return lazy?{
+      lazy:`React.lazy(()=>import(${genarateElePath(element)}))`
+    }:{
+      element: injectChild(
+        createElementName(element),
+        curIndexList,
+        children.length ? true : false
+      ),
+    }
+  } else {
+    return {}
+  }
+}
+
+
+
 /**
  * 生成符合react-router 数据
  * @param route
@@ -109,21 +130,13 @@ const injectChild = (
 export const generateCode = (
   route: RouteProps[],
   indexList: number[] = []
-): RouteProps[] => {
+): any[] => {
   return route.map((el, index) => {
     const { element, children = [], ...rest } = el;
     const curIndexList = [...indexList, index];
     return {
       ...rest,
-      ...(element
-        ? {
-            element: injectChild(
-              createElementName(element),
-              curIndexList,
-              children.length ? true : false
-            ),
-          }
-        : {}),
+      ...genarateEle(el,curIndexList),
       ...(children.length
         ? { children: generateCode(children, curIndexList) }
         : {}),
