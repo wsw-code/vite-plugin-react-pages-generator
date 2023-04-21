@@ -18,6 +18,7 @@ const routes = [
                 path: "/one1/one11/PageA",
                 name: "PageAA",
                 element: "PageA",
+                lazy: true,
               },
               {
                 path: "/one1/one11/PageB",
@@ -48,11 +49,6 @@ const routes = [
         path: "/one2",
         name: "模块122",
         children: [
-          {
-            path: "/one2/PageA",
-            name: "PageA",
-            element: "PageA",
-          },
           {
             path: "/one2/PageE",
             name: "PageE",

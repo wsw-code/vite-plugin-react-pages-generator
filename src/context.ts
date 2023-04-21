@@ -10,7 +10,7 @@ import path from "path";
 import { RouteProps } from "./type";
 import resolveUserConfig, { getUserConfigPath } from "./util/loadConfigFile";
 import * as Contants from "./constants";
-import { componentReplacer } from "./util";
+import { componentReplacer, lazyReplacer } from "./util";
 import { lazy } from "react";
 
 // 虚拟模块名称
@@ -58,11 +58,9 @@ export const createElementName = (elementName: string) => {
   return `${ElementPreName}${elementName.replace(/[^A-Za-z0-9]/gi, "")}`;
 };
 
-export const genarateElePath = (element:string) => {
-  return normalizePath(
-    path.resolve("src", "pages", element)
-  );
-}
+export const genarateElePath = (element: string) => {
+  return normalizePath(path.resolve("src", "pages", element));
+};
 
 /**
  * 生成 组件名：组件引入字符串 Map
@@ -75,9 +73,9 @@ export const getPathMap = (route: RouteProps[]) => {
   while (loopList.length) {
     const node = loopList.shift() as RouteProps[];
     for (let index = 0; index < node.length; index++) {
-      const { element = null, children = null,lazy} = node[index];
+      const { element = null, children = null, lazy } = node[index];
       if (element && !lazy) {
-        const elementPath = genarateElePath(element)
+        const elementPath = genarateElePath(element);
         const elementName = createElementName(element);
         res[elementName] = `import ${elementName} from '${elementPath}';`;
       }
@@ -103,25 +101,24 @@ const injectChild = (
   )}]}`;
 };
 
-
-const genarateEle = (el:RouteProps,curIndexList:number[]) => {
-  const { element, children = [],lazy} = el;
-  if(element) {
-    return lazy?{
-      lazy:`React.lazy(()=>import(${genarateElePath(element)}))`
-    }:{
-      element: injectChild(
-        createElementName(element),
-        curIndexList,
-        children.length ? true : false
-      ),
-    }
+const genarateEle = (el: RouteProps, curIndexList: number[]) => {
+  const { element, children = [], lazy } = el;
+  if (element) {
+    return lazy
+      ? {
+          lazy: `React.lazy(()=>import('${genarateElePath(element)}'))`,
+        }
+      : {
+          element: injectChild(
+            createElementName(element),
+            curIndexList,
+            children.length ? true : false
+          ),
+        };
   } else {
-    return {}
+    return {};
   }
-}
-
-
+};
 
 /**
  * 生成符合react-router 数据
@@ -136,7 +133,7 @@ export const generateCode = (
     const curIndexList = [...indexList, index];
     return {
       ...rest,
-      ...genarateEle(el,curIndexList),
+      ...genarateEle(el, curIndexList),
       ...(children.length
         ? { children: generateCode(children, curIndexList) }
         : {}),
@@ -176,13 +173,13 @@ export default class PageContext {
       );
 
       const pathMap = getPathMap(routes);
-      const routeString = JSON.stringify(generateCode(routes));
+      const route = generateCode(routes);
+      const routeString = JSON.stringify(route);
+      const transformStr = routeString
+        .replace(Contants.componentRE, componentReplacer)
+        .replace(Contants.lazyRE, lazyReplacer);
 
-      const transformStr = routeString.replace(
-        Contants.componentRE,
-        componentReplacer
-      );
-
+      console.log(transformStr);
       return `
       import React from "react";\n
       ${Object.values(pathMap).join("\n")} \n
