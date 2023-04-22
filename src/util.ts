@@ -1,11 +1,4 @@
-export function componentReplacer(
-  str: string,
-  replaceStr: string,
-  path: string
-) {
+export function componentReplacer(str: string, replaceStr: string) {
+  console.log(replaceStr);
   return `"element":React.createElement(${replaceStr.replace(/"/gi, "")})`;
-}
-
-export function lazyReplacer(str: string, replaceStr: string) {
-  return `lazy:${replaceStr.replace(/"/gi, "")}`;
 }

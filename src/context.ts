@@ -1,17 +1,11 @@
-import {
-  Plugin,
-  ViteDevServer,
-  normalizePath,
-  transformWithEsbuild,
-} from "vite";
+import { normalizePath } from "vite";
 import type { ConfigEnv } from "vite";
 
 import path from "path";
 import { RouteProps } from "./type";
 import resolveUserConfig, { getUserConfigPath } from "./util/loadConfigFile";
 import * as Contants from "./constants";
-import { componentReplacer, lazyReplacer } from "./util";
-import { lazy } from "react";
+import { componentReplacer } from "./util";
 
 // 虚拟模块名称
 export const virtualFibModuleId = "react-router-page";
@@ -74,10 +68,17 @@ export const getPathMap = (route: RouteProps[]) => {
     const node = loopList.shift() as RouteProps[];
     for (let index = 0; index < node.length; index++) {
       const { element = null, children = null, lazy } = node[index];
-      if (element && !lazy) {
+      if (element) {
         const elementPath = genarateElePath(element);
         const elementName = createElementName(element);
-        res[elementName] = `import ${elementName} from '${elementPath}';`;
+        console.log("createElementName", elementName);
+        if (lazy) {
+          res[
+            elementName
+          ] = `const ${elementName} = React.lazy(()=>import('${elementPath}'))`;
+        } else {
+          res[elementName] = `import ${elementName} from '${elementPath}';`;
+        }
       }
       if (children) {
         loopList.push(children);
@@ -92,29 +93,26 @@ const injectChild = (
   indexList: number[],
   hasChild: boolean
 ) => {
+  const elementName = createElementName(element);
   if (!hasChild) {
-    return element;
+    return elementName;
   }
 
-  return `${element},{routes:${Contants.routeData}[${indexList.join(
+  return `${elementName},{routes:${Contants.routeData}[${indexList.join(
     "]['children']["
   )}]}`;
 };
 
 const genarateEle = (el: RouteProps, curIndexList: number[]) => {
-  const { element, children = [], lazy } = el;
+  const { element, children = [] } = el;
   if (element) {
-    return lazy
-      ? {
-          lazy: `React.lazy(()=>import('${genarateElePath(element)}'))`,
-        }
-      : {
-          element: injectChild(
-            createElementName(element),
-            curIndexList,
-            children.length ? true : false
-          ),
-        };
+    return {
+      element: injectChild(
+        element,
+        curIndexList,
+        children.length ? true : false
+      ),
+    };
   } else {
     return {};
   }
@@ -175,9 +173,10 @@ export default class PageContext {
       const pathMap = getPathMap(routes);
       const route = generateCode(routes);
       const routeString = JSON.stringify(route);
-      const transformStr = routeString
-        .replace(Contants.componentRE, componentReplacer)
-        .replace(Contants.lazyRE, lazyReplacer);
+      const transformStr = routeString.replace(
+        Contants.componentRE,
+        componentReplacer
+      );
 
       console.log(transformStr);
       return `
