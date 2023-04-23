@@ -1,11 +1,11 @@
-import { Plugin, normalizePath } from "vite";
+import { Plugin, normalizePath } from 'vite';
 
-import { ConfigProps } from "./type";
+import { ConfigProps } from './type';
 import PageContext, {
   resolvedFibVirtualModuleId,
   virtualFibModuleId,
-  moduleGraphName,
-} from "./context";
+  moduleGraphName
+} from './context';
 
 export const defineConfig = (config: ConfigProps) => {
   return config;
@@ -15,10 +15,10 @@ export default function virtualFibModulePlugin(): Plugin {
   const context = new PageContext();
 
   // 路由配置文件路径
-  let routerPath = process.cwd() + "/" + "router.config.ts";
+  const routerPath = process.cwd() + '/' + 'router.config.ts';
 
   return {
-    name: "vite-plugin-react-pages-generator",
+    name: 'vite-plugin-react-pages-generator',
 
     config(config, configEnv) {
       console.log(config);
@@ -36,7 +36,7 @@ export default function virtualFibModulePlugin(): Plugin {
       if (normalizePath(routerPath) === ctx.file) {
         /**重新刷新浏览器 */
         ctx.server.ws.send({
-          type: "full-reload",
+          type: 'full-reload'
         });
 
         /**清楚缓存 */
@@ -50,11 +50,11 @@ export default function virtualFibModulePlugin(): Plugin {
       if (id === resolvedFibVirtualModuleId) {
         const _code = await context.genarateClientCode();
         return {
-          code: _code,
+          code: _code
         };
       }
 
       return null;
-    },
+    }
   };
 }

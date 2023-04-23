@@ -1,21 +1,18 @@
-import fs from "fs-extra";
-import type {ConfigEnv} from 'vite';
-import * as Contants from "../constants";
-import { loadConfigFromFile } from "vite";
-import { resolve } from "path";
+import fs from 'fs-extra';
+import type { ConfigEnv } from 'vite';
+import { loadConfigFromFile } from 'vite';
+import { resolve } from 'path';
 
-import { ConfigProps } from "../type";
+import { ConfigProps } from '../type';
 
 type RawConfig =
   | ConfigProps
   | Promise<ConfigProps>
   | (() => ConfigProps | Promise<ConfigProps>);
 
-
-
-export function getUserConfigPath(root: string= process.cwd()) {
+export function getUserConfigPath(root: string = process.cwd()) {
   try {
-    const supportConfigFiles = ["router.config.ts", "router.config.js"];
+    const supportConfigFiles = ['router.config.ts', 'router.config.js'];
     const configPath = supportConfigFiles
       .map((file) => resolve(root, file))
       .find(fs.pathExistsSync);
@@ -26,18 +23,17 @@ export function getUserConfigPath(root: string= process.cwd()) {
   }
 }
 
-export default async function(
+export default async function (
   root: string,
   command: ConfigEnv['command'],
   mode: ConfigEnv['mode'],
-  configPath:string
+  configPath: string
 ) {
-  
   // 2. 读取配置文件的内容
   const result = await loadConfigFromFile(
     {
       command,
-      mode,
+      mode
     },
     configPath,
     root
@@ -49,7 +45,7 @@ export default async function(
     // 1. object
     // 2. promise
     // 3. function
-    const userConfig = await (typeof rawConfig === "function"
+    const userConfig = await (typeof rawConfig === 'function'
       ? rawConfig()
       : rawConfig);
 
