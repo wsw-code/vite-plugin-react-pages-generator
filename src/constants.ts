@@ -7,3 +7,4 @@ export const componentRE = /"(?:component|element)":("(.*?)")/g;
 export const routeData = "routeData";
 
 export const configFileName = "router.config";
+

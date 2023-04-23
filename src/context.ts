@@ -5,7 +5,7 @@ import path from "path";
 import { RouteProps } from "./type";
 import resolveUserConfig, { getUserConfigPath } from "./util/loadConfigFile";
 import * as Contants from "./constants";
-import { componentReplacer } from "./util";
+import { componentReplacer,ReactElement } from "./util";
 
 // 虚拟模块名称
 export const virtualFibModuleId = "react-router-page";
@@ -15,38 +15,6 @@ export const resolvedFibVirtualModuleId = "\0" + virtualFibModuleId;
 export const moduleGraphName = `\x00${virtualFibModuleId}`;
 
 export const ElementPreName = "Pre_";
-
-export const traverswRouteTree = (route: RouteProps[]) => {
-  const res: RouteProps[] = [];
-
-  const loopList: LoopType[] = [
-    {
-      parent: res,
-      data: route,
-    },
-  ];
-
-  while (loopList.length) {
-    const { data, parent } = loopList.shift() as LoopType;
-    for (let index = 0; index < data.length; index++) {
-      const element = data[index];
-      parent.push(element);
-      if (element.children instanceof Array) {
-        loopList.push({
-          parent: parent[index].children as RouteProps[],
-          data: element.children,
-        });
-      }
-    }
-  }
-
-  return res;
-};
-
-type LoopType = {
-  data: RouteProps[];
-  parent: RouteProps[];
-};
 
 export const createElementName = (elementName: string) => {
   return `${ElementPreName}${elementName.replace(/[^A-Za-z0-9]/gi, "")}`;
@@ -91,26 +59,29 @@ export const getPathMap = (route: RouteProps[]) => {
 const injectChild = (
   element: string,
   indexList: number[],
-  hasChild: boolean
+  hasChild: boolean,
+  isLazy?:boolean
 ) => {
   const elementName = createElementName(element);
-  if (!hasChild) {
-    return elementName;
+  let reactString = hasChild?ReactElement(elementName,`{routes:${Contants.routeData}[${indexList.join("]['children'][")}]}`): ReactElement(elementName);
+
+  if(isLazy) {
+    reactString = ReactElement(`React.Suspense`,`{children:${reactString}}`)
   }
 
-  return `${elementName},{routes:${Contants.routeData}[${indexList.join(
-    "]['children']["
-  )}]}`;
+  return reactString
+
 };
 
 const genarateEle = (el: RouteProps, curIndexList: number[]) => {
-  const { element, children = [] } = el;
+  const { element, children = [],lazy } = el;
   if (element) {
     return {
       element: injectChild(
         element,
         curIndexList,
-        children.length ? true : false
+        children.length ? true : false,
+        lazy
       ),
     };
   } else {
@@ -127,7 +98,7 @@ export const generateCode = (
   indexList: number[] = []
 ): any[] => {
   return route.map((el, index) => {
-    const { element, children = [], ...rest } = el;
+    const { element, children = [],lazy, ...rest } = el;
     const curIndexList = [...indexList, index];
     return {
       ...rest,

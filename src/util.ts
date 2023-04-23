@@ -1,4 +1,7 @@
 export function componentReplacer(str: string, replaceStr: string) {
-  console.log(replaceStr);
-  return `"element":React.createElement(${replaceStr.replace(/"/gi, "")})`;
+
+  return `"element":${replaceStr.replace(/"/gi, "")}`;
 }
+
+
+export const ReactElement = (str:string,props?:string)=> `React.createElement(${str}${props?`,${props}`:''})` 
